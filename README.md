@@ -38,7 +38,7 @@ Short-term volatility estimated from bid/ask mid-quotes to minimise market micro
 Requires Python 3.10+ and a Java runtime (for Spark).
 
 ```bash
-git clone https://github.com/<your-username>/<repo-name>.git && cd <repo-name>
+git clone https://github.com/royken01/volatility-lakehouse.git && cd volatility-lakehouse
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[all]"
 cp lakehouse/.env.example lakehouse/.env
