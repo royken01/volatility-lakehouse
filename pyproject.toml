@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "volatility-lakehouse"
+version = "1.1.0"
+description = "Lakehouse and modelling framework that forecasts realized volatility in a configurable window after scheduled releases (macro data, inventory reports, central-bank decisions) for any asset, from an event calendar, prices and GDELT news."
+readme = "README.md"
+requires-python = ">=3.10"
+
+# Core: settings, data collection (GDELT, calendars), exploratory scripts and result figures
+# (no Spark, PyTorch or MLflow).
+dependencies = [
+    "python-dotenv>=1.0",
+    "tomli>=2.0; python_version < '3.11'",
+    "requests>=2.31",     # GDELT and economic-calendar collectors
+    "numpy",
+    "pandas>=2.0,<3",     # PySpark 3.5 predates pandas 3
+    "pyarrow>=14.0",
+    "polars>=1.0",
+    "scipy>=1.11",        # Spearman correlations, Mann-Whitney, skewness, t-tests
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+# Bronze / silver / gold tables on Iceberg (Cloudflare R2 Data Catalog).
+lakehouse = [
+    "pyspark==3.5.3",
+    "pyiceberg[pyarrow]>=0.7",
+]
+# Training, experiment tracking and the model zoo.
+models = [
+    "scikit-learn>=1.5",  # also provides joblib for --jobs
+    "xgboost>=2.1",
+    "statsmodels>=0.14",  # SARIMAX (arimax) and the order-identification tests
+    "torch",              # LSTM
+    "mlflow>=3.5",
+    "skops",              # safe model serialisation in MLflow (cloudpickle without it)
+    "boto3",              # the MLflow server stores artifacts in R2
+]
+# Headline sentiment scoring (CrudeBERT or any Hugging Face model).
+news = [
+    "torch",
+    "transformers",
+]
+all = ["volatility-lakehouse[lakehouse,models,news]"]
+dev = ["pytest", "pyflakes"]
+# Apache Airflow is deliberately not an extra: it lives in its own virtual environment and starts the
+# commands above in this one (see orchestration/).
+
+[project.scripts]
+vol-lakehouse = "lakehouse.cli:main"
+vol-pipeline = "lakehouse.cli:pipeline"
+vol-train = "lakehouse.cli:train"
+
+[tool.setuptools.packages.find]
+include = ["lakehouse*"]
+namespaces = false        # data/ and outputs/ have no __init__.py and stay out of the wheel
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

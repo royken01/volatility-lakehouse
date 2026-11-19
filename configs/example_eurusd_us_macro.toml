@@ -1,0 +1,46 @@
+# Example of a different study: EUR/USD realized volatility in the 5 minutes after US macro releases.
+# The event calendar can be fetched with `vol-lakehouse calendar` (see lakehouse/sources/economic_calendar.py).
+#
+#   vol-lakehouse --config configs/example_eurusd_us_macro.toml calendar fred --release CPI --release NFP ...
+#   vol-lakehouse --config configs/example_eurusd_us_macro.toml pipeline
+
+asset = "EUR/USD"
+
+[windows]
+post_event_seconds = 300       # target: realized_vol_300s
+lags = 6                       # previous 6 releases of the same type
+tick_window_seconds = 900
+pre_event_minutes = 60
+
+[sources]
+events = "events/us_macro_calendar.csv"
+headlines = "contextual/gdelt_headlines_eurusd.csv"
+prices_tick = "EURUSD_tick/*.parquet"
+prices_m1 = "EURUSD_m1/*.parquet"
+
+[prices]
+clock = "UTC"                  # one rule: the vendor already stamps in UTC
+
+[events]
+clock = "America/New_York"     # the calendar file is in New York local time
+types = [
+    { name = "Nonfarm Payrolls", label = "NFP" },
+    { name = "CPI m/m", label = "CPI" },
+    { name = "FOMC Statement", label = "FOMC", reference = true },
+]
+
+[market]
+session_timezone = "America/New_York"   # FX day rolls over at 17:00 New York
+session_open_hour = 17
+
+[news]
+sentiment_model = "ProsusAI/finbert"    # any Hugging Face sequence-classification sentiment model
+keywords = ["euro", "eur/usd", "eurusd", "dollar", "federal reserve", "ecb", "fed", "inflation",
+            "nonfarm payrolls", "payrolls", "treasury yields", "rate cut", "rate hike"]
+
+[news.ambiguous]
+fed = ["rate", "rates", "powell", "policy", "hike", "cut", "inflation"]
+
+[news.gdelt]
+min_score = 3
+themes = ["ECON_INTEREST_RATES", "ECON_CURRENCY_EXCHANGE_RATE", "ECON_INFLATION"]

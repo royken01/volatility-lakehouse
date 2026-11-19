@@ -1,0 +1,87 @@
+# Settings that reproduce the MSc thesis study: Brent crude oil (BCO/USD), 30-second realized volatility
+# after the weekly EIA and API inventory releases, HistData tick/1-minute files, CrudeBERT news sentiment.
+#
+#   vol-lakehouse --config configs/crude_oil_thesis.toml pipeline
+#   (or: export LAKEHOUSE_CONFIG=configs/crude_oil_thesis.toml)
+
+asset = "Brent crude oil (BCO/USD)"
+
+[windows]
+post_event_seconds = 30        # target: realized_vol_30s
+lags = 10                      # pre_vol_30s_lag1..10 = target of the previous 10 same-type releases
+tick_window_seconds = 600      # silver keeps ticks within +/- 10 minutes of each release
+pre_event_minutes = 60         # pre_vol_h: realized volatility of the last hour (1-minute bars)
+
+[sources]                      # relative to <workspace>/data/raw
+events = "events/concated_events_rounded.csv"
+headlines = "contextual/gdelt_headlines_2019_now.csv"
+prices_tick = "BCO_tick/BCOUSD_tick_*.parquet"
+prices_m1 = "BCO_m1/BCOUSD_m1_*.parquet"
+
+[prices]
+timestamp_formats = ["%Y%m%d %H%M%S%3f", "%Y%m%d %H%M%S"]
+# HistData clock: New York rules before 2019, then Oslo time minus 6 h.
+clock = [
+    { timezone = "America/New_York", until = "2019-01-01" },
+    { timezone = "Europe/Oslo", offset_hours = 6 },
+]
+
+[events]
+timestamp_format = "%Y-%m-%d %H:%M:%S"
+# The calendar export used a fixed UTC+1 clock before 2024 and Oslo time afterwards.
+clock = [
+    { timezone = "Etc/GMT-1", until = "2024-01-01" },
+    { timezone = "Europe/Oslo" },
+]
+types = [
+    { name = "Crude Oil Inventories", label = "EIA", dummy = "crude_inventories" },
+    { name = "API Weekly Crude Oil Stock", label = "API", dummy = "api_crude_stock", reference = true },
+]
+# 126 API stamps (2014-2018) are 5 minutes late; the volatility peak is at :30.
+time_corrections = [{ event = "API Weekly Crude Oil Stock", minute = 35, shift_minutes = -5 }]
+# An API row that repeats the numbers of an EIA row within a day is a calendar copy, not a release.
+copies = { "API Weekly Crude Oil Stock" = "Crude Oil Inventories" }
+
+[market]
+session_timezone = "America/New_York"   # CME energy session rolls over at 18:00 New York
+session_open_hour = 18
+
+[news]
+sentiment_model = "crudebert"           # local CrudeBERT weights in <workspace>/news/crudebert_model
+scored_table = "gdelt_headlines_crudebert"
+half_life_hours = 72
+lookback_trading_days = 22
+keywords = [
+    "crude oil", "wti", "west texas intermediate", "brent crude", "brent", "opec", "opec+",
+    "oil barrel", "barrel of oil", "barrels per day", "oil price", "oil market", "oil supply",
+    "oil demand", "oil production", "oil output", "oil exports", "oil imports", "oil embargo",
+    "oil sanctions", "oil inventory", "oil inventories", "oil stockpile", "oil futures",
+    "crude futures", "nymex crude", "light sweet crude", "heavy crude", "petroleum", "oil refinery",
+    "oil field", "oilfield", "shale oil", "oil tanker", "oil major", "oil producer", "rig count",
+]
+mask = [
+    "cooking oil", "olive oil", "palm oil", "sunflower oil", "coconut oil", "vegetable oil",
+    "essential oil", "motor oil", "fish oil", "cbd oil", "canola oil", "soybean oil", "oil painting",
+]
+
+[news.ambiguous]   # words that count only next to one of the context words
+crude = ["oil", "barrel", "price", "futures", "inventory", "opec", "brent", "wti", "supply", "demand"]
+oil = ["crude", "barrel", "price", "futures", "inventory", "opec", "brent", "wti", "supply", "demand", "saudi", "iran", "russia"]
+
+[news.gdelt]
+min_score = 5
+themes = ["ECON_OILPRICE"]
+boost_patterns = [
+    '\b(?:oil|crude)\s+(?:prices?|futures|market)\b',
+    '\bwti\b|west texas intermediate|\bbrent\s+(?:crude|oil|futures|prices?)\b',
+    '\bopec\b|\binventor(?:y|ies)\b|\bstockpiles?\b|\bbpd\b|output cuts?|production cuts?|\brig count\b',
+]
+penalty_patterns = [
+    '\b(?:petrol|diesel|gasoline|fuel) (?:price|prices|rates?)\b',
+    '\boil spill\b|\bpalm\b|\bcooking\b',
+]
+domains = [
+    "reuters.com", "bloomberg.com", "cnbc.com", "marketwatch.com", "wsj.com", "ft.com", "apnews.com",
+    "nasdaq.com", "oilprice.com", "rigzone.com", "spglobal.com", "argusmedia.com", "investing.com",
+    "fxstreet.com", "yahoo.com", "worldoil.com", "eia.gov", "iea.org", "opec.org", "forexlive.com",
+]
