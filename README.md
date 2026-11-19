@@ -16,26 +16,22 @@ The framework accepts a **config** .toml file containing information about desir
 
 ## Highlights:
 
--**Configurables:** asset, post-event window size, number of lags for sequence models such as ARIMAX and LSTM, release types, source clocks, trading session and news topic, all listed in config TOML file
--**Data collection:**
+- **Configurables:** asset, post-event window size, number of lags for sequence models such as ARIMAX and LSTM, release types, source clocks, trading session and news topic, all listed in config TOML file
+- **Data collection:**
 News headlines retrieved in-pipeline through a GDELT collector with keyword/relevance filter. Economic calendar fetched with FRED/ALFRED for historical figures, ForexFactory for upcoming events
--**Medallion lakehouse:**
+- **Medallion lakehouse:**
 Data stored in Apache Iceberg tables on Cloudflare R2, managed using Iceberg REST catalog. Ensuring ACID transactions and allows for time travelling using snapshot id's to trace exact gold table version used for each run.
--**Hybrid computing:**
+- **Hybrid computing:**
 Polars is used for faster table transforming by reading Iceberg through PyIceberg, while Spark is purely used for read/write operations.
 - **Clock handling:**
 Considers specific time-zone rules for each data source, handles changes from daytime adjusted timestamps and similar (was a specific problem in my thesis data), as well as duplicate removal
 
 - **Tick-level features:**
 Short-term volatility estimated from bid/ask mid-quotes to minimise market microstructure noise, lagged same-type reactions.
--**News sentiment:** FinBERT or any NLP model from a Hugging Face repository. Calculates exponential weighted mean average of sentiment scores leading up to scheduled event
--**Leakage-free evaluation:** The model prevents leakage by construction by defining a set of prohibited variables to be set as features, not allowing for model training if this is the case. Models are trained using a yearly expanding-window walk-forward with time-ordered tuning and an embargo. Models are trained in a second stage by introducing news variables for the events covered by headlines, and tests wheter news improves a context-agnostic model against a placebo model with pure recalibration on the average residual error.
--**Model zoo:** naive mean, HAR-RV, ARIMAX, LSTM, Random Forest and XGBoost
--**MLOps:** runs are tracked in MLflow, with artificats in R2 storage. One Airflow 3.0 DAG covers news collection, data ingestion, features production, training, publishing and exporting resulting data for Power BI visualisation.
-
-## Pipeline architecture
-
-```mermaid flowchart LR subgraph Collect["Data collection"] CAL[Economic calendar<br/>FRED / ForexFactory] GD[GDELT headlines<br/>GKG backfill / DOC API] PX[Tick and 1-min prices<br/>any vendor] end subgraph Lakehouse["Cloudflare R2 + Iceberg REST catalog"] BR[(bronze<br/>raw, as-is)] SI[(silver<br/>UTC-aligned, cleaned,<br/>sentiment-scored)] GO[(gold<br/>events_features)] PR[(gold<br/>model_predictions<br/>model_metrics)] end CFG{{framework settings<br/>asset · window · events · news}} CAL & GD & PX --> BR --> SI --> GO GO --> T[Walk-forward training<br/>HAR · ARIMAX · RF · XGB · LSTM] T <--> M[MLflow<br/>tracking + registry] T --> PR --> BI[Power BI export] CFG -.-> Collect & SI & GO & T AF{{Airflow DAG}} -.orchestrates.-> GD & BR & SI & GO & T & PR ```
+- **News sentiment:** FinBERT or any NLP model from a Hugging Face repository. Calculates exponential weighted mean average of sentiment scores leading up to scheduled event
+- **Leakage-free evaluation:** The model prevents leakage by construction by defining a set of prohibited variables to be set as features, not allowing for model training if this is the case. Models are trained using a yearly expanding-window walk-forward with time-ordered tuning and an embargo. Models are trained in a second stage by introducing news variables for the events covered by headlines, and tests wheter news improves a context-agnostic model against a placebo model with pure recalibration on the average residual error.
+- **Models:** naive mean, HAR-RV, ARIMAX, LSTM, Random Forest and XGBoost
+- **MLOps:** runs are tracked in MLflow, with artificats in R2 storage. One Airflow 3.0 DAG covers news collection, data ingestion, features production, training, publishing and exporting resulting data for Power BI visualisation.
 
 ## Quick start
 
@@ -155,8 +151,7 @@ respect its fair-use terms.
 
 ## Author
 
-**Roy Ken Felix Duke** · MSc Data Science, University of Oslo · [LinkedIn](https://www.linkedin.com/in/<your-handle>) ·
-[Portfolio](https://<your-site>)
+**Roy Ken Felix Duke** · MSc Data Science, University of Oslo · [LinkedIn](https://www.linkedin.com/in/roy-ken-felix-duke/)
 
 ## License
 
