@@ -1,6 +1,6 @@
 # Volatility Lakehouse
 
-This is an end-to-end datapipeline and ML framework designed to forecast an asset's prices movement surrounding scheduled macroeconomic announcments, utilizing open-source natural language processing models to produce sentiment scores of contextual news information as explanatory variables. This is an extention of the crude-oil specific pipeline from my master thesis which focused on modeling the short-term volatility following EIA Crude Inventory Reports. This extension allows for modeling the desired time-frame following a macro event (inventory reports, central-bank descisions, CPI, etc.) for any underlying asset (EUR/USD, Brent Crude Oil, Gold), with integrated logic for importing scheduled event data from an official economic calendar. This is done by providing the following inputs
+This is an end-to-end datapipeline and ML framework designed to forecast an asset's prices movement surrounding scheduled macroeconomic announcments, utilizing open-source natural language processing models to produce sentiment scores of contextual news information as explanatory variables. This is an extention of the crude-oil specific pipeline from my master thesis which focused on modeling the short-term volatility following EIA Crude Inventory Reports. This extension was developed by actively using GenAI tools in order to implement argument handling for an easier user experience and finding a compatible stack for scraping economic calendar news and similar. The framework now allows for modeling the desired time-frame following a macro event (inventory reports, central-bank descisions, CPI, etc.) for any underlying asset (EUR/USD, Brent Crude Oil, Gold), with integrated logic for importing scheduled event data from an official economic calendar. This is done by providing the following inputs
 
 | Input    | Description | Source |
 | -------- | ------- | ------- |    
@@ -155,5 +155,4 @@ respect its fair-use terms.
 
 ## License
 
-MIT (code). Data sources keep their own licences.# volatility-lakehouse
-# volatility-lakehouse
+MIT (code). Data sources keep their own licences.
